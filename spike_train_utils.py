@@ -33,6 +33,15 @@ def calc_rate(spike_train, window):
     return (spike_train[:window_bin].sum() / window_bin) / params.dt
 
 
+# this was my solution:
+
+# if window == 0:
+#     rateOfFire = np.mean(spikeTrain)
+# w = np.full(window, 1 / window) # create the window to convolve with
+#     rateOfFire = np.convolve(spikeTrain, w, mode = 'valid')
+#     return rateOfFire
+
+
 # assuming len(r) = len(spike_train) = int(total_size / dt)
 def generate_poisson_spikes(r, dt, total_size):
     spike_train = np.zeros(int(total_size / dt))
@@ -65,7 +74,7 @@ def generate_poisson_spikes_with_refractory_period(r0, dt, total_size):
 
 def generate_bursty_firing_rate(n):
     r = np.zeros(n)
-    s = random.randint(0, int(n/2))
-    e = random.randint(s, n-1)
+    s = random.randint(0, int(n / 2))
+    e = random.randint(s, n - 1)
     r[s:e] = params.high_firing_rate
     return r
