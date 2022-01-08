@@ -1,75 +1,44 @@
 import random
-
 import numpy as np
-
 import params
+import matplotlib.pyplot as plt
 
 
-def generate_homogeneous_poisson_spikes(r, dt, total_size):
-    spike_train = np.zeros(int(total_size / dt))
-    np.random.seed(2)
-    spike_train[np.random.rand(int(total_size / dt)) < r * dt] = 1
-    return spike_train
+def generatePoiSpikes(r, dt, totalSize):
+    return 1 * (np.random.rand(int(totalSize / dt)) < r * dt)
 
 
 # Calculate the FF of the given spikeTrain
-def calc_FF(spike_train):
-    var = np.var(spike_train)
-    mean = np.mean(spike_train)
-    return var / mean
+def calcFF(spikeTrain):
+    return np.var(spikeTrain) / np.mean(spikeTrain)
 
 
 # Calculate the CV of the given spikeTrain
-def calc_CV(spike_train):
-    return np.std(spike_train) / np.mean(spike_train)
+def calcCV(spikeTrain):
+    return np.std(spikeTrain) / np.mean(spikeTrain)
 
 
 # Calculate the firing rate of the given spikeTrain
-def calc_rate(spike_train, window):
-    if window == 0 or window > params.total_size:
-        window = params.total_size
-    window_bin = int(window / params.dt)
-
-    return (spike_train[:window_bin].sum() / window_bin) / params.dt
-
-
-# this was my solution:
-
-# if window == 0:
-#     rateOfFire = np.mean(spikeTrain)
-# w = np.full(window, 1 / window) # create the window to convolve with
-#     rateOfFire = np.convolve(spikeTrain, w, mode = 'valid')
-#     return rateOfFire
-
-
-# assuming len(r) = len(spike_train) = int(total_size / dt)
-def generate_poisson_spikes(r, dt, total_size):
-    spike_train = np.zeros(int(total_size / dt))
-    np.random.seed(2)
-    for i in range(len(spike_train)):
-        if np.random.rand(int(total_size / dt)) < r[i] * dt:
-            spike_train[i] = 1
-    return spike_train
+def calcRate(spikeTrain, window):
+    if window == 0:
+        return np.mean(spikeTrain)
+    w = np.full(window, 1 / window)  # create the window to convolve with
+    rate = np.convolve(spikeTrain, w, mode='valid')
+    plt.figure()
+    plt.plot(np.arange(len(spikeTrain)) * params.dt, rate)
+    return rate
 
 
 def generate_poisson_spikes_with_refractory_period(r0, dt, total_size):
-    spike_train = np.zeros(int(total_size / dt))
-    np.random.seed(2)
-    was_spike = False
+    spikeTrain = np.zeros(int(total_size / dt))
     r = r0
-    for i in range(len(spike_train)):
-        if was_spike:
-            if last_response == i - 1:
-                r = 0
-            else:
-                r = min(r0, r0 * (i - last_response) / 5)
-
+    last_response = - params.refractory_period
+    for i in range(len(spikeTrain)):
+        r = min(r0, r0 * dt * (i - last_response) / params.refractory_period)
         if np.random.rand(int(total_size / dt)) < r * dt:
-            spike_train[i] = 1
+            spikeTrain[i] = 1
             last_response = i
-            was_spike = True
-
-    return spike_train
+    return spikeTrain
 
 
 def generate_bursty_firing_rate(n):
@@ -78,3 +47,16 @@ def generate_bursty_firing_rate(n):
     e = random.randint(s, n - 1)
     r[s:e] = params.high_firing_rate
     return r
+
+
+def statsFunctions(spikeTrain):
+    tau = np.diff(np.where(spikeTrain == 1))
+    [hist, bins] = np.histogram(tau * params.dt, np.linspace(0.5 * params.dt, np.max(tau) * dt + dt / 2, int(np.max(tau) + 1)))
+    plt.bar(bins[:-1], hist, align='edge')
+    pdf_tau = hist / float(len(tau[0]))
+    cdf_tau = np.cumsum(pdf_tau)
+    survival = 1 - cdf_tau
+    plt.plot(bins[1:] + (bins[1] - bins[0]) / 2, survival)
+    hazard = pdf_tau / survival
+    plt.plot(bins[0:-3] + (bins[1] - bins[0]) / 2, hazard[:-2])
+
