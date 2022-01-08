@@ -1,14 +1,19 @@
-import random
-
 import numpy as np
+import random
 
 import params
 
 
-def generate_homogeneous_poisson_spikes(r, dt, total_size):
+def generate_poisson_spikes(r, dt, total_size):
     spike_train = np.zeros(int(total_size / dt))
     np.random.seed(2)
-    spike_train[np.random.rand(int(total_size / dt)) < r * dt] = 1
+    if type(r) == int or float:
+        spike_train[np.random.rand(int(total_size / dt)) < r * dt] = 1
+    else:
+        # assuming len(r) = len(spike_train) = int(total_size / dt)
+        for i in range(len(spike_train)):
+            if random.random() < r[i] * dt:
+                spike_train[i] = 1
     return spike_train
 
 
@@ -41,39 +46,27 @@ def calc_rate(spike_train, window):
 #     rateOfFire = np.convolve(spikeTrain, w, mode = 'valid')
 #     return rateOfFire
 
-
-# assuming len(r) = len(spike_train) = int(total_size / dt)
-def generate_poisson_spikes(r, dt, total_size):
-    spike_train = np.zeros(int(total_size / dt))
-    np.random.seed(2)
-    for i in range(len(spike_train)):
-        if np.random.rand(int(total_size / dt)) < r[i] * dt:
-            spike_train[i] = 1
-    return spike_train
-
-
 def generate_poisson_spikes_with_refractory_period(r0, dt, total_size):
     spike_train = np.zeros(int(total_size / dt))
-    np.random.seed(2)
+    np.random.seed(42)
     was_spike = False
-    r = r0
+    r = r0[0]
     for i in range(len(spike_train)):
         if was_spike:
             if last_response == i - 1:
                 r = 0
             else:
-                r = min(r0, r0 * (i - last_response) / 5)
+                r = min(r0[i], r0[i] * (i - last_response) / 5)
 
-        if np.random.rand(int(total_size / dt)) < r * dt:
+        if random.random() < r * dt:
             spike_train[i] = 1
             last_response = i
             was_spike = True
-
     return spike_train
 
 
 def generate_bursty_firing_rate(n):
-    r = np.zeros(n)
+    r = np.full(n, params.r0)
     s = random.randint(0, int(n / 2))
     e = random.randint(s, n - 1)
     r[s:e] = params.high_firing_rate
