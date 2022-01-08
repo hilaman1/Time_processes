@@ -51,7 +51,7 @@ def generate_bursty_firing_rate(n):
 
 def statsFunctions(spikeTrain):
     tau = np.diff(np.where(spikeTrain == 1))
-    [hist, bins] = np.histogram(tau * params.dt, np.linspace(0.5 * params.dt, np.max(tau) * dt + dt / 2, int(np.max(tau) + 1)))
+    [hist, bins] = np.histogram(tau * params.dt, np.linspace(0.5 * params.dt, np.max(tau) * params.dt + params.dt / 2, int(np.max(tau) + 1)))
     plt.bar(bins[:-1], hist, align='edge')
     pdf_tau = hist / float(len(tau[0]))
     cdf_tau = np.cumsum(pdf_tau)
