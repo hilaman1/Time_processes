@@ -8,6 +8,18 @@ def generatePoiSpikes(r, dt, totalSize):
     return 1 * (np.random.rand(int(totalSize / dt)) < r * dt)
 
 
+def generate_poisson_spikes(r, dt, total_size):
+    spike_train = np.zeros(int(total_size / dt))
+    if type(r) == int or float:
+        spike_train[np.random.rand(int(total_size / dt)) < r * dt] = 1
+    else:
+        # assuming len(r) = len(spike_train) = int(total_size / dt)
+        for i in range(len(spike_train)):
+            if random.random() < r[i] * dt:
+                spike_train[i] = 1
+    return spike_train
+
+
 # Calculate the FF of the given spikeTrain
 def calcFF(spikeTrain):
     return np.var(spikeTrain) / np.mean(spikeTrain)
@@ -29,25 +41,42 @@ def calcRate(spikeTrain, window):
     return rate
 
 
-def generate_poisson_spikes_with_refractory_period(r0, dt, total_size):
+def generate_poisson_spikes_with_refractory_period_v2(r0, dt, total_size):
     spikeTrain = np.zeros(int(total_size / dt))
-    r = r0
     last_response = - params.refractory_period
     for i in range(len(spikeTrain)):
-        r = min(r0, r0 * dt * (i - last_response) / params.refractory_period)
-        if np.random.rand(int(total_size / dt)) < r * dt:
+        r = min(r0[0], r0[0] * dt * (i - last_response) / params.refractory_period)
+        if random.random() < r * dt:
             spikeTrain[i] = 1
             last_response = i
     return spikeTrain
 
 
+def generate_poisson_spikes_with_refractory_period(r0, dt, total_size):
+    spike_train = np.zeros(int(total_size / dt))
+    was_spike = False
+    r = r0[0]
+    for i in range(len(spike_train)):
+        if was_spike:
+            if last_response == i - 1:
+                r = 0
+            else:
+                r = min(r0[i], r0[i] * (i - last_response) / 5)
+
+        if random.random() < r * dt:
+            spike_train[i] = 1
+            last_response = i
+            was_spike = True
+    return spike_train
+
+
+
 def generate_bursty_firing_rate(n):
-    r = np.zeros(n)
+    r = np.full(n, params.r0)
     s = random.randint(0, int(n / 2))
     e = random.randint(s, n - 1)
     r[s:e] = params.high_firing_rate
     return r
-
 
 def statsFunctions(spikeTrain):
     tau = np.diff(np.where(spikeTrain == 1))
