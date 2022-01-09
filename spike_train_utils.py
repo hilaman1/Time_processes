@@ -8,16 +8,16 @@ def generatePoiSpikes(r, dt, totalSize):
     return 1 * (np.random.rand(int(totalSize / dt)) < r * dt)
 
 
-def generate_poisson_spikes(r, dt, total_size):
-    spike_train = np.zeros(int(total_size / dt))
-    if type(r) == int or float:
-        spike_train[np.random.rand(int(total_size / dt)) < r * dt] = 1
-    else:
-        # assuming len(r) = len(spike_train) = int(total_size / dt)
-        for i in range(len(spike_train)):
-            if random.random() < r[i] * dt:
-                spike_train[i] = 1
-    return spike_train
+# def generate_poisson_spikes(r, dt, total_size):
+#     spike_train = np.zeros(int(total_size / dt))
+#     if type(r) == int or float:
+#         spike_train[np.random.rand(int(total_size / dt)) < r * dt] = 1
+#     else:
+#         # assuming len(r) = len(spike_train) = int(total_size / dt)
+#         for i in range(len(spike_train)):
+#             if random.random() < r[i] * dt:
+#                 spike_train[i] = 1
+#     return spike_train
 
 
 # Calculate the FF of the given spikeTrain
@@ -70,7 +70,6 @@ def generate_poisson_spikes_with_refractory_period(r0, dt, total_size):
     return spike_train
 
 
-
 def generate_bursty_firing_rate(n):
     r = np.full(n, params.r0)
     s = random.randint(0, int(n / 2))
@@ -78,14 +77,28 @@ def generate_bursty_firing_rate(n):
     r[s:e] = params.high_firing_rate
     return r
 
+
 def statsFunctions(spikeTrain):
+    fig, ax = plt.subplots()
+    fig2, ax2 = plt.subplots()
+    fig3, ax3 = plt.subplots()
+
     tau = np.diff(np.where(spikeTrain == 1))
-    [hist, bins] = np.histogram(tau * params.dt, np.linspace(0.5 * params.dt, np.max(tau) * params.dt + params.dt / 2, int(np.max(tau) + 1)))
-    plt.bar(bins[:-1], hist, align='edge')
+    [hist, bins] = np.histogram(tau * params.dt, np.linspace(0.5 * params.dt, np.max(tau) * params.dt + params.dt / 2,
+                                                             int(np.max(tau) + 1)))
+    print(hist[:10])
+    ax3.plot(bins[:-1], hist)
+    ax3.set_title("TIH")
+    fig3.show()
+
     pdf_tau = hist / float(len(tau[0]))
     cdf_tau = np.cumsum(pdf_tau)
     survival = 1 - cdf_tau
-    plt.plot(bins[1:] + (bins[1] - bins[0]) / 2, survival)
-    hazard = pdf_tau / survival
-    plt.plot(bins[0:-3] + (bins[1] - bins[0]) / 2, hazard[:-2])
+    ax.plot(bins[1:] + (bins[1] - bins[0]) / 2, survival)
+    ax.set_title("Survival function")
+    fig.show()
 
+    hazard = pdf_tau / survival
+    ax2.plot(bins[0:-3] + (bins[1] - bins[0]) / 2, hazard[:-2])
+    ax2.set_title("Hazard function")
+    fig2.show()
